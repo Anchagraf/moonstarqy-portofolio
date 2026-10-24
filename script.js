@@ -1,18 +1,18 @@
 // ==========================================
 // 1. KONFIGURASI SUBSTACK
+// Publikasi: anchagraf.substack.com
 // ==========================================
 const SUBSTACK_USERNAME = "anchagraf"; 
 
 // ==========================================
 // 2. DATA LINK KONTAK & SOSIAL MEDIA
-// Tinggal ganti username/link akun kamu
 // ==========================================
 const socialLinks = [
   { title: "💬 WhatsApp", url: "https://wa.me/6287839476881", style: "btn-primary" },
   { title: "✉️ Email", url: "mailto:izindikbud@gmail.com", style: "btn-secondary" },
   { title: "📝 Substack", url: `https://${SUBSTACK_USERNAME}.substack.com`, style: "btn-secondary" },
-  { title: "💼 LinkedIn", url: "https://linkedin.com/in/muhammadrizkyramandikha", style: "btn-secondary" },
-  { title: "📷 Instagram", url: "https://instagram.com/moonstarqy", style: "btn-secondary" }
+  { title: "💼 LinkedIn", url: "https://linkedin.com/in/username-kamu", style: "btn-secondary" },
+  { title: "📷 Instagram", url: "https://instagram.com/username-kamu", style: "btn-secondary" }
 ];
 
 // ==========================================
@@ -28,7 +28,7 @@ function stripHtmlAndExcerpt(htmlString) {
 }
 
 // ==========================================
-// ESEKUSI UTAMA
+// ESEKUSI UTAMA & SLIDER RSS SUBSTACK
 // ==========================================
 document.addEventListener('DOMContentLoaded', async () => {
   
@@ -40,33 +40,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     }).join('');
   }
 
-  // --- LOGIKA SLIDER SUBSTACK ---
+  // --- LOGIKA SLIDER SUBSTACK MENGGUNAKAN RSS2JSON ---
   const vibeBox = document.querySelector('.vibe-box');
-  const feedUrl = `https://${SUBSTACK_USERNAME}.substack.com/feed`;
-  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(feedUrl)}`;
+  const targetFeed = `https://${SUBSTACK_USERNAME}.substack.com/feed`;
+  const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(targetFeed)}`;
 
   try {
-    const response = await fetch(proxyUrl);
-    const proxyData = await response.json();
-    
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(proxyData.contents, "text/xml");
-    const items = xmlDoc.querySelectorAll("item");
+    const response = await fetch(rssUrl);
+    const data = await response.json();
 
-    if (items.length > 0) {
-      const posts = [];
-      items.forEach(function(item) {
-        const title = item.querySelector("title") ? item.querySelector("title").textContent : "";
-        const link = item.querySelector("link") ? item.querySelector("link").textContent : "";
-        const description = item.querySelector("description") ? item.querySelector("description").textContent : "";
-        
-        if (title && link) {
-          posts.push({
-            title: title,
-            excerpt: stripHtmlAndExcerpt(description),
-            link: link
-          });
-        }
+    if (data.status === 'ok' && data.items && data.items.length > 0) {
+      const posts = data.items.map(function(/** @type {any} */ item) {
+        return {
+          title: item.title,
+          excerpt: stripHtmlAndExcerpt(item.content || item.description || ""),
+          link: item.link
+        };
       });
 
       let currentIndex = 0;
@@ -87,6 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       renderSlide(currentIndex);
 
+      // Jika artikel di Substack lebih dari 1, otomatis geser tiap 3 detik
       if (posts.length > 1) {
         setInterval(() => {
           currentIndex = (currentIndex + 1) % posts.length;
@@ -106,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     vibeBox.innerHTML = `
       <div class="substack-slide">
         <span class="slide-badge">SUBSTACK</span>
-        <p class="slide-excerpt">"In every block of code and every cup of manual brew, there is a rhythm of patience."</p>
+        <p class="slide-excerpt">Gagal menyambungkan ke feed Substack.</p>
         <a href="https://${SUBSTACK_USERNAME}.substack.com" target="_blank" class="slide-link">Kunjungi Substack →</a>
       </div>
     `;
